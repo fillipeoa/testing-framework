@@ -97,21 +97,41 @@ class TestSuiteTest(TestCase):
 
         assert result.summary() == '3 run, 1 failed, 1 error'
 
-result = TestResult()
-suite = TestSuite()
+class TestLoaderTest(TestCase):
 
-suite.add_test(TestCaseTest('test_result_success_run'))
-suite.add_test(TestCaseTest('test_result_failure_run'))
-suite.add_test(TestCaseTest('test_result_error_run'))
-suite.add_test(TestCaseTest('test_result_multiple_run'))
-suite.add_test(TestCaseTest('test_was_set_up'))
-suite.add_test(TestCaseTest('test_was_run'))
-suite.add_test(TestCaseTest('test_was_tear_down'))
-suite.add_test(TestCaseTest('test_template_method'))
+    def test_create_suite(self):
+        loader = TestLoader()
+        suite = loader.make_suite(TestStub)
+        assert len(suite.tests) == 3
 
-suite.add_test(TestSuiteTest('test_suite_size'))
-suite.add_test(TestSuiteTest('test_suite_success_run'))
-suite.add_test(TestSuiteTest('test_suite_multiple_run'))
+    def test_create_suite_of_suites(self):
+        loader = TestLoader()
+        stub_suite = loader.make_suite(TestStub)
+        spy_suite = loader.make_suite(TestSpy)
 
-suite.run(result)
-print(result.summary())
+        suite = TestSuite()
+        suite.add_test(stub_suite)
+        suite.add_test(spy_suite)
+
+        assert len(suite.tests) == 2
+
+    def test_get_multiple_test_case_names(self):
+        loader = TestLoader()
+        names = loader.get_test_case_names(TestStub)
+        assert names == ['test_error', 'test_failure', 'test_success']
+
+    def test_get_no_test_case_names(self):
+
+        class Test(TestCase):
+            def foobar(self):
+                pass
+
+        loader = TestLoader()
+        names = loader.get_test_case_names(Test)
+        assert names == []
+
+loader = TestLoader()
+suite = loader.make_suite(TestLoaderTest)
+
+runner = TestRunner()
+runner.run(suite)
